@@ -7,8 +7,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class CustomerJPADataAccessServiceTest {
 
     private CustomerJPADataAccessService underTest;
@@ -51,8 +49,8 @@ class CustomerJPADataAccessServiceTest {
     void insertCustomer() {
         // Given
         Customer customer = new Customer(
-                1, "Ali", "ali@gmail.com", 2
-        );
+                1, "Ali", "ali@gmail.com", 2,
+                Gender.MALE);
 
         // When
         underTest.insertCustomer(customer);
@@ -101,8 +99,8 @@ class CustomerJPADataAccessServiceTest {
     void updateCustomer() {
         // Given
         Customer customer = new Customer(
-                1, "Ali", "ali@gmail.com", 2
-        );
+                1, "Ali", "ali@gmail.com", 2,
+                Gender.MALE);
 
         // When
         underTest.updateCustomer(customer);
