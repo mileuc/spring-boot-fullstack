@@ -15,7 +15,7 @@
     },
     {
       "name": "amigoscode-api",
-      "image": "mileuc/amigoscode-api:17.09.2023.05.39.19",
+      "image": "mileuc/amigoscode-api:24.09.2023.17.26.51",
       "essential": true,
       "memory": 512,
       "portMappings": [
