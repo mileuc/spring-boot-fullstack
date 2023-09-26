@@ -2,8 +2,8 @@ import { Wrap, WrapItem, Spinner, Text } from '@chakra-ui/react';
 import SidebarWithHeader from "./components/shared/SideBar.jsx";
 import { useEffect, useState } from 'react';
 import { getCustomers } from "./services/client.js"
-import CardWithImage from "./components/Card.jsx";
-import CreateCustomerDrawer from "./components/CreateCustomerDrawer.jsx";
+import CardWithImage from "./components/customer/CustomerCard.jsx";
+import CreateCustomerDrawer from "./components/customer/CreateCustomerDrawer.jsx";
 import {errorNotification} from "./services/notifications.js";
 
 const App = () => {
@@ -12,7 +12,7 @@ const App = () => {
     const [loading, setLoading] = useState(false);
     const [err, setError] = useState("");
 
-    const fetchCustomers = () => {
+    const fetchCustomers = (token) => {
         setLoading(true);
         getCustomers().then(res => {
             setCustomers(res.data)
