@@ -24,6 +24,7 @@ public class CustomerJDBCDataAccessService implements CustomerDao {
         var sql = """
                 SELECT id, name, email, password, age, gender
                 FROM customer
+                LIMIT 1000
                 """;
 
         List<Customer> customers = jdbcTemplate.query(sql, customerRowMapper);
