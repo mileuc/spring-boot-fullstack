@@ -3,6 +3,8 @@ package com.amigoscode.customer;
 import com.amigoscode.exception.DuplicateResourceException;
 import com.amigoscode.exception.RequestValidationException;
 import com.amigoscode.exception.ResourceNotFoundException;
+import com.amigoscode.s3.S3Buckets;
+import com.amigoscode.s3.S3Service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,13 +12,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.ImagingOpException;
+import java.io.IOException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 
 class CustomerServiceTest {
 
@@ -24,6 +30,10 @@ class CustomerServiceTest {
     private CustomerDao customerDao;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private S3Service s3Service;
+    @Mock
+    private S3Buckets s3Buckets;
     private CustomerService underTest;
     private AutoCloseable autoCloseable;
 
@@ -32,7 +42,7 @@ class CustomerServiceTest {
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new CustomerService(customerDao, customerDTOMapper, passwordEncoder);
+        underTest = new CustomerService(customerDao, customerDTOMapper, passwordEncoder, s3Service, s3Buckets);
     }
 
     @AfterEach
@@ -329,5 +339,170 @@ class CustomerServiceTest {
 
         // Then
         Mockito.verify(customerDao, Mockito.never()).updateCustomer(any());
+    }
+
+    @Test
+    void canUploadProfileImage() {
+        // Given
+        int customerId = 10;
+
+        Mockito.when(customerDao.existsPersonWithId(customerId)).thenReturn(true);
+
+        byte[] bytes = "Hello World".getBytes();
+        MultipartFile multipartFile = new MockMultipartFile(
+                "file", bytes
+        );
+
+        String bucket = "customer-bucket";
+        Mockito.when(s3Buckets.getCustomer()).thenReturn(bucket);
+
+        // When
+        underTest.uploadCustomerProfileImage(
+                customerId, multipartFile
+        );
+
+        // Then
+        ArgumentCaptor<String> profileImageIdArgumentCaptor =
+                ArgumentCaptor.forClass(String.class);
+
+        Mockito.verify(customerDao).updateCustomerProfileImageId(
+                profileImageIdArgumentCaptor.capture(),
+                eq(customerId)
+        );
+
+        Mockito.verify(s3Service).putObject(
+                bucket,
+                "profile-images/%s/%s".formatted(
+                        customerId, profileImageIdArgumentCaptor.getValue()),
+                bytes
+        );
+    }
+
+    @Test
+    void cannotUploadProfileImageWhenCustomerDoesNotExist() {
+        // Given
+        int customerId = 10;
+
+        Mockito.when(customerDao.existsPersonWithId(customerId)).thenReturn(false);
+
+        // When
+        assertThatThrownBy(() ->
+            underTest.uploadCustomerProfileImage(customerId,
+                    Mockito.mock(MultipartFile.class))
+        ).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("customer with id ["+ customerId +"] not found");
+
+        // Then
+        Mockito.verify(customerDao).existsPersonWithId(customerId);
+        Mockito.verifyNoMoreInteractions(customerDao);
+        Mockito.verifyNoInteractions(s3Buckets);
+        Mockito.verifyNoInteractions(s3Service);
+    }
+
+    @Test
+    void cannotUploadProfileImageWhenExceptionThrown() throws IOException {
+        // Given
+        int customerId = 10;
+
+        Mockito.when(customerDao.existsPersonWithId(customerId)).thenReturn(true);
+
+        MultipartFile multipartFile = Mockito.mock(MultipartFile.class);
+        Mockito.when(multipartFile.getBytes()).thenThrow(IOException.class);
+
+        String bucket = "customer-bucket";
+        Mockito.when(s3Buckets.getCustomer()).thenReturn(bucket);
+
+        // When
+        assertThatThrownBy(() -> underTest.uploadCustomerProfileImage(
+                customerId, multipartFile
+        )).isInstanceOf(RuntimeException.class)
+                .hasMessage("Failed to upload profile image")
+                .hasRootCauseInstanceOf(IOException.class);
+
+        // Then
+        Mockito.verify(customerDao, Mockito.never()).updateCustomerProfileImageId(
+                any(),
+                any()
+        );
+    }
+
+    @Test
+    void canDownloadProfileImage() {
+        // Given
+        int customerId = 10;
+        String profileImageId = "2222";
+        Customer customer = new Customer(
+                customerId,
+                "Alex",
+                "alex@gmail.com",
+                "password",
+                19,
+                Gender.MALE,
+                profileImageId
+        );
+        Mockito.when(customerDao.selectCustomerById(customerId))
+                .thenReturn(Optional.of(customer));
+
+        String bucket = "customer-bucket";
+        Mockito.when(s3Buckets.getCustomer()).thenReturn(bucket);
+
+        byte[] expectedImage = "image".getBytes();
+        Mockito.when(s3Service.getObject(
+                bucket,
+                "profile-images/%s/%s".formatted(customerId, profileImageId)
+        )).thenReturn(expectedImage);
+
+        // When
+        byte[] actualImage = underTest.getCustomerProfileImage(customerId);
+
+        // Then
+        assertThat(actualImage).isEqualTo(expectedImage);
+    }
+
+    @Test
+    void cannotDownloadWhenNoProfileImageId() {
+        // Given
+        int customerId = 10;
+        Customer customer = new Customer(
+                customerId,
+                "Alex",
+                "alex@gmail.com",
+                "password",
+                19,
+                Gender.MALE
+        );
+
+        Mockito.when(customerDao.selectCustomerById(customerId))
+                .thenReturn(Optional.of(customer));
+
+        // When
+        // Then
+        assertThatThrownBy(() -> {
+            underTest.getCustomerProfileImage(customerId);
+        }).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("customer with id [%s] profile image not found"
+                        .formatted(customerId));
+        Mockito.verifyNoInteractions(s3Buckets);
+        Mockito.verifyNoInteractions(s3Service);
+    }
+
+    @Test
+    void cannotDownloadProfileImageWhenCustomerDoesNotExist() {
+        // Given
+        int customerId = 10;
+
+        Mockito.when(customerDao.selectCustomerById(customerId))
+                .thenReturn(Optional.empty());
+
+        // When
+        // Then
+        assertThatThrownBy(() -> {
+            underTest.getCustomerProfileImage(customerId);
+        }).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("customer with id [%s] not found"
+                        .formatted(customerId));
+
+        Mockito.verifyNoInteractions(s3Buckets);
+        Mockito.verifyNoInteractions(s3Service);
     }
 }

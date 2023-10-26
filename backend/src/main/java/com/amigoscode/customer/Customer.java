@@ -16,6 +16,10 @@ import java.util.Objects;
                @UniqueConstraint(
                        name = "customer_email_unique",
                        columnNames = "email"
+               ),
+               @UniqueConstraint(
+                       name = "profile_image_id_unique",
+                       columnNames = "profileImageId"
                )
         }
 )
@@ -55,62 +59,78 @@ public class Customer implements UserDetails {
         )
         private String password;
 
+        @Column(
+                unique = true
+        )
+        private String profileImageId;
+
         public Customer(){}
-            public Customer(Integer id,
-                            String name,
-                            String email,
-                            String password, Integer age,
-                            Gender gender) {
-                this.id = id;
-                this.name = name;
-                this.email = email;
-                this.password = password;
-                this.age = age;
-                this.gender = gender;
-            }
+        public Customer(Integer id,
+                        String name,
+                        String email,
+                        String password, Integer age,
+                        Gender gender) {
+            this.id = id;
+            this.name = name;
+            this.email = email;
+            this.password = password;
+            this.age = age;
+            this.gender = gender;
+        }
 
-            public Customer(String name,
-                            String email,
-                            String password, Integer age,
-                            Gender gender) {
-                this.name = name;
-                this.email = email;
-                this.password = password;
-                this.age = age;
-                this.gender = gender;
-            }
+        public Customer(Integer id,
+                        String name,
+                        String email,
+                        String password, Integer age,
+                        Gender gender,
+                        String profileImageId) {
+            this(id, name, email, password, age, gender);
+            this.profileImageId = profileImageId;
+        }
 
-            public Integer getId() {
-                return id;
-            }
 
-            public void setId(Integer id) {
-                this.id = id;
-            }
+    public Customer(String name,
+                        String email,
+                        String password, Integer age,
+                        Gender gender) {
+            this.name = name;
+            this.email = email;
+            this.password = password;
+            this.age = age;
+            this.gender = gender;
+        }
 
-            public String getName() {
-                return name;
-            }
+        public Integer getId() {
+            return id;
+        }
 
-            public void setName(String name) {
-                this.name = name;
-            }
+        public void setId(Integer id) {
+            this.id = id;
+        }
 
-            public String getEmail() {
-                return email;
-            }
+        public String getName() {
+            return name;
+        }
 
-            public void setEmail(String email) {
-                this.email = email;
-            }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-            public Integer getAge() {
-                return age;
-            }
+        public String getEmail() {
+            return email;
+        }
 
-            public void setAge(Integer age) {
-                this.age = age;
-            }
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public Integer getAge() {
+            return age;
+        }
+
+        public void setAge(Integer age) {
+            this.age = age;
+        }
 
         public Gender getGender() {
             return gender;
@@ -120,28 +140,12 @@ public class Customer implements UserDetails {
             this.gender = gender;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Customer customer = (Customer) o;
-            return Objects.equals(id, customer.id) && Objects.equals(name, customer.name) && Objects.equals(email, customer.email) && Objects.equals(age, customer.age) && gender == customer.gender;
+        public String getProfileImageId() {
+            return profileImageId;
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(id, name, email, age, gender);
-        }
-
-        @Override
-        public String toString() {
-            return "Customer{" +
-                    "id=" + id +
-                    ", name='" + name + '\'' +
-                    ", email='" + email + '\'' +
-                    ", age=" + age +
-                    ", gender=" + gender +
-                    '}';
+        public void setProfileImageId(String profileImageId) {
+            this.profileImageId = profileImageId;
         }
 
         @Override
@@ -177,5 +181,31 @@ public class Customer implements UserDetails {
         @Override
         public boolean isEnabled() {
             return true;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Customer customer = (Customer) o;
+            return Objects.equals(id, customer.id) && Objects.equals(name, customer.name) && Objects.equals(email, customer.email) && Objects.equals(age, customer.age) && gender == customer.gender && Objects.equals(password, customer.password) && Objects.equals(profileImageId, customer.profileImageId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, name, email, age, gender, password, profileImageId);
+        }
+
+        @Override
+        public String toString() {
+            return "Customer{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", email='" + email + '\'' +
+                    ", age=" + age +
+                    ", gender=" + gender +
+                    ", password='" + password + '\'' +
+                    ", profileImageId='" + profileImageId + '\'' +
+                    '}';
         }
 }
