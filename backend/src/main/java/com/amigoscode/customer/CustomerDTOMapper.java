@@ -20,6 +20,8 @@ public class CustomerDTOMapper implements Function<Customer, CustomerDTO> {
                         .stream()
                         .map(role -> role.getAuthority())
                         .collect(Collectors.toList()),
-                customer.getUsername());
+                customer.getUsername(),
+                customer.getProfileImageId()
+        );
     }
 }

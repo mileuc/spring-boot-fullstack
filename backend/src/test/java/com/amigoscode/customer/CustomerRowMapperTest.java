@@ -21,6 +21,8 @@ class CustomerRowMapperTest {
         Mockito.when(resultSet.getString("name")).thenReturn("Jameela");
         Mockito.when(resultSet.getString("email")).thenReturn("jameela@gmail.com");
         Mockito.when(resultSet.getString("gender")).thenReturn("FEMALE");
+        Mockito.when(resultSet.getString("password")).thenReturn("password");
+        Mockito.when(resultSet.getString("profile_image_id")).thenReturn("22222");
 
         // When
         Customer actual = customerRowMapper.mapRow(resultSet, 1);
@@ -28,7 +30,7 @@ class CustomerRowMapperTest {
         // Then
         Customer expected = new Customer(
                 1, "Jameela", "jameela@gmail.com", "password", 19,
-                Gender.FEMALE);
+                Gender.FEMALE, "22222");
         assertThat(actual).isEqualTo(expected);
     }
 }
