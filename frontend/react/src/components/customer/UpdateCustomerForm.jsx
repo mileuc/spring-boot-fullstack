@@ -126,7 +126,7 @@ const UpdateCustomerForm = ({fetchCustomers, initialValues, customerId}) => {
                                 label="Email Address"
                                 name="email"
                                 type="email"
-                                placeholder="jane@formik.com"
+                                placeholder="jane@email.com"
                             />
 
                             <MyTextInput
